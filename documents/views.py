@@ -3,6 +3,10 @@ from .models import Document
 from .serializers import DocumentSerializer
 import pdfplumber
 from docx import Document as DocxReader
+from google import genai
+from django.conf import settings
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -36,3 +40,40 @@ class DocumentViewSet(viewsets.ModelViewSet):
             text = f"Error extracting text: {str(e)}"
 
         return text
+
+
+@api_view(['POST'])
+def chat_with_documents(request):
+    question = request.data.get('question', '')
+
+    if not question:
+        return Response({'error': 'Question is required'}, status=400)
+
+    all_documents = Document.objects.exclude(extracted_text='')
+    context = ""
+    for doc in all_documents:
+        context += f"\n\n--- Document: {doc.title} ---\n{doc.extracted_text}"
+
+    if not context:
+        return Response({'answer': 'No documents have been uploaded yet. Please upload a document first.'})
+
+    client = genai.Client(api_key=settings.GEMINI_API_KEY)
+
+    prompt = f"""You are a helpful assistant that answers questions based only on the provided documents.
+If the answer is not in the documents, say "I don't have information about that in the uploaded documents."
+
+Documents:
+{context}
+
+Question: {question}
+
+Answer:"""
+
+    try:
+        response = client.models.generate_content(
+            model='gemini-flash-latest',
+            contents=prompt
+        )
+        return Response({'answer': response.text})
+    except Exception as e:
+        return Response({'error': str(e)}, status=500)
