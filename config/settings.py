@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-8l3jih=jm+n$_pq)p5(enlmy*#bqvqzg3jh3tk2)ll6+mf1#rz
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['namidu.pythonanywhere.com']
 
 
 # Application definition
@@ -139,6 +139,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
+    "https://document-qa-assistant.netlify.app",
 ]
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
