@@ -85,22 +85,21 @@ Question: {question}
 
 Answer:"""
 
-    max_retries = 3
+    models_to_try = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest']
 
-    for attempt in range(max_retries):
+    for model_name in models_to_try:
         try:
             response = client.models.generate_content(
-                model='gemini-flash-latest',
+                model=model_name,
                 contents=prompt
             )
             return Response({'answer': response.text})
         except Exception as e:
             if '503' in str(e) or 'UNAVAILABLE' in str(e):
-                if attempt < max_retries - 1:
-                    time.sleep(2)
-                    continue
-                return Response(
-                    {'answer': 'The AI service is temporarily busy. Please try again in a moment.'},
-                    status=200
-                )
+                continue
             return Response({'error': str(e)}, status=500)
+
+    return Response(
+        {'answer': 'The AI service is temporarily busy. Please try again in a moment.'},
+        status=200
+    )
