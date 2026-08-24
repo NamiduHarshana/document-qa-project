@@ -85,7 +85,7 @@ Question: {question}
 
 Answer:"""
 
-    models_to_try = ['gemini-2.5-flash', 'gemini-flash-latest', 'gemini-flash-lite-latest']
+    models_to_try = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-flash-latest']
 
     for model_name in models_to_try:
         try:
