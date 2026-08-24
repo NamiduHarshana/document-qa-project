@@ -1,4 +1,3 @@
-import time
 from rest_framework import viewsets
 from .models import Document
 from .serializers import DocumentSerializer
@@ -85,21 +84,14 @@ Question: {question}
 
 Answer:"""
 
-    models_to_try = ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-flash-latest']
-
-    for model_name in models_to_try:
-        try:
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt
-            )
-            return Response({'answer': response.text})
-        except Exception as e:
-            if '503' in str(e) or 'UNAVAILABLE' in str(e):
-                continue
-            return Response({'error': str(e)}, status=500)
-
-    return Response(
-        {'answer': 'The AI service is temporarily busy. Please try again in a moment.'},
-        status=200
-    )
+    try:
+        response = client.models.generate_content(
+            model='gemini-3.6-flash',
+            contents=prompt
+        )
+        return Response({'answer': response.text})
+    except Exception as e:
+        return Response(
+            {'answer': 'The AI service is temporarily busy. Please try again in a moment.'},
+            status=200
+        )
