@@ -9,12 +9,21 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 
+def get_session_id(request):
+    """Get session_id from request header, sent by frontend."""
+    return request.headers.get('X-Session-Id', 'anonymous')
+
+
 class DocumentViewSet(viewsets.ModelViewSet):
-    queryset = Document.objects.all().order_by('-uploaded_at')
     serializer_class = DocumentSerializer
 
+    def get_queryset(self):
+        session_id = get_session_id(self.request)
+        return Document.objects.filter(session_id=session_id).order_by('-uploaded_at')
+
     def perform_create(self, serializer):
-        document = serializer.save()
+        session_id = get_session_id(self.request)
+        document = serializer.save(session_id=session_id)
         extracted_text = self.extract_text(document)
         document.extracted_text = extracted_text
         document.save()
@@ -45,17 +54,23 @@ class DocumentViewSet(viewsets.ModelViewSet):
 @api_view(['POST'])
 def chat_with_documents(request):
     question = request.data.get('question', '')
+    document_id = request.data.get('document_id')
+    session_id = get_session_id(request)
 
     if not question:
         return Response({'error': 'Question is required'}, status=400)
 
-    all_documents = Document.objects.exclude(extracted_text='')
+    documents_qs = Document.objects.filter(session_id=session_id).exclude(extracted_text='')
+
+    if document_id:
+        documents_qs = documents_qs.filter(id=document_id)
+
     context = ""
-    for doc in all_documents:
+    for doc in documents_qs:
         context += f"\n\n--- Document: {doc.title} ---\n{doc.extracted_text}"
 
     if not context:
-        return Response({'answer': 'No documents have been uploaded yet. Please upload a document first.'})
+        return Response({'answer': 'No documents found. Please upload a document first.'})
 
     client = genai.Client(api_key=settings.GEMINI_API_KEY)
 
