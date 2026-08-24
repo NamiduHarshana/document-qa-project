@@ -142,4 +142,17 @@ CORS_ALLOWED_ORIGINS = [
     "https://document-qa-assistant.netlify.app",
 ]
 
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'x-session-id',
+]
+
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
