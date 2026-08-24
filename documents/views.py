@@ -1,3 +1,4 @@
+import time
 from rest_framework import viewsets
 from .models import Document
 from .serializers import DocumentSerializer
@@ -84,11 +85,22 @@ Question: {question}
 
 Answer:"""
 
-    try:
-        response = client.models.generate_content(
-            model='gemini-flash-latest',
-            contents=prompt
-        )
-        return Response({'answer': response.text})
-    except Exception as e:
-        return Response({'error': str(e)}, status=500)
+    max_retries = 3
+
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model='gemini-flash-latest',
+                contents=prompt
+            )
+            return Response({'answer': response.text})
+        except Exception as e:
+            if '503' in str(e) or 'UNAVAILABLE' in str(e):
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                    continue
+                return Response(
+                    {'answer': 'The AI service is temporarily busy. Please try again in a moment.'},
+                    status=200
+                )
+            return Response({'error': str(e)}, status=500)
