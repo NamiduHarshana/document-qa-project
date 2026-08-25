@@ -52,6 +52,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
 
 @api_view(['POST'])
+def clear_session_documents(request):
+    session_id = request.data.get('session_id') or get_session_id(request)
+    deleted, _ = Document.objects.filter(session_id=session_id).delete()
+    return Response({'deleted': deleted})
+
+
+@api_view(['POST'])
 def chat_with_documents(request):
     question = request.data.get('question', '')
     document_id = request.data.get('document_id')
