@@ -1,12 +1,18 @@
-from rest_framework import viewsets
-from .models import Document
-from .serializers import DocumentSerializer
+import logging
+
+import filetype
 import pdfplumber
+from django.conf import settings
 from docx import Document as DocxReader
 from google import genai
-from django.conf import settings
+from rest_framework import viewsets
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+
+from .models import Document
+from .serializers import DocumentSerializer
+
+logger = logging.getLogger(__name__)
 
 
 def get_session_id(request):
@@ -32,21 +38,29 @@ class DocumentViewSet(viewsets.ModelViewSet):
         file_path = document.file.path
         text = ""
 
+        kind = filetype.guess(file_path)
+        mime = kind.mime if kind else None
+
         try:
-            if file_path.endswith('.pdf'):
+            if mime == 'application/pdf':
                 with pdfplumber.open(file_path) as pdf:
                     for page in pdf.pages:
                         page_text = page.extract_text()
                         if page_text:
                             text += page_text + "\n"
 
-            elif file_path.endswith('.docx'):
+            elif mime == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
                 doc = DocxReader(file_path)
                 for para in doc.paragraphs:
                     text += para.text + "\n"
 
-        except Exception as e:
-            text = f"Error extracting text: {str(e)}"
+            else:
+                logger.warning("Document %s has unrecognized content type: %s", document.pk, mime)
+                text = "Unable to extract text: unrecognized file content."
+
+        except Exception:
+            logger.exception("Failed to extract text from document %s", document.pk)
+            text = "Unable to extract text from this document."
 
         return text
 

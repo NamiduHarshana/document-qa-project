@@ -138,6 +138,8 @@ MAILERS = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+MAX_DOCUMENT_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "https://document-qa-assistant.netlify.app",
